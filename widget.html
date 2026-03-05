@@ -604,6 +604,68 @@
             }
         }
 
+        /* ---- CALENDAR POPOVER ---- */
+        #calendar-popover {
+            position: absolute;
+            background: #26262a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            z-index: 2000;
+            width: 200px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+            -webkit-app-region: no-drag;
+        }
+
+        body.theme-light #calendar-popover {
+            background: #ffffff;
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+            color: #1c1c1e;
+        }
+
+        .cal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .cal-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 2px;
+            text-align: center;
+            font-size: 11px;
+        }
+
+        .cal-day-name {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 10px;
+            margin-bottom: 2px;
+        }
+
+        body.theme-light .cal-day-name {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        .cal-cell {
+            padding: 4px 0;
+            border-radius: 4px;
+        }
+
+        .cal-cell.today {
+            background: #ff9f0a;
+            color: #fff !important;
+            font-weight: bold;
+        }
+
+        .cal-cell.empty {
+            opacity: 0;
+        }
+
         #add-city-btn {
             background: rgba(255, 255, 255, 0.05);
             border: 1px dashed rgba(255, 255, 255, 0.13);
@@ -1235,9 +1297,9 @@
             var parts = new Intl.DateTimeFormat('en-US', {
                 timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric'
             }).formatToParts();
-            var m = parseInt(parts.find(function (p) { return p.type === 'month' }).value, 10);
-            var d = parseInt(parts.find(function (p) { return p.type === 'day' }).value, 10);
-            var y = parseInt(parts.find(function (p) { return p.type === 'year' }).value, 10);
+            var m = parseInt(parts.find(function (p) { return p.type === 'month' }).value.replace(/\D/g, ''), 10);
+            var d = parseInt(parts.find(function (p) { return p.type === 'day' }).value.replace(/\D/g, ''), 10);
+            var y = parseInt(parts.find(function (p) { return p.type === 'year' }).value.replace(/\D/g, ''), 10);
 
             var firstDay = new Date(y, m - 1, 1).getDay();
             var daysInMonth = new Date(y, m, 0).getDate();

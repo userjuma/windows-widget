@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; font-weight: 600; font-size: 13px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; font-size: 11px; }
+        .cal-day-name { font-size: 10px; margin-bottom: 2px;}
+        .cal-cell { padding: 4px 0; border-radius: 4px; }
+        .cal-cell.today { background: #ff9f0a; color: #fff; font-weight: bold; }
+        .cal-cell.empty { opacity: 0; }
+        #calendar-popover { width: 200px; padding: 10px; background: #eee; }
+    </style>
+</head>
+<body>
+    <div id="calendar-popover"></div>
+    <script>
+        var tz = "America/New_York";
+        var pop = document.getElementById('calendar-popover');
+
+        var parts = new Intl.DateTimeFormat('en-US', {
+            timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric'
+        }).formatToParts();
+        var m = parseInt(parts.find(p => p.type === 'month').value, 10);
+        var d = parseInt(parts.find(p => p.type === 'day').value, 10);
+        var y = parseInt(parts.find(p => p.type === 'year').value, 10);
+
+        var firstDay = new Date(y, m - 1, 1).getDay();
+        var daysInMonth = new Date(y, m, 0).getDate();
+        var mName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(y, m - 1, 15));
+
+        var html = '<div class="cal-header"><span>' + mName + ' ' + y + '</span></div><div class="cal-grid">';
+        var dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+        dayNames.forEach(function (n) { html += '<div class="cal-day-name">' + n + '</div>'; });
+
+        for (var i = 0; i < firstDay; i++) {
+            html += '<div class="cal-cell empty">_</div>';
+        }
+        for (var i = 1; i <= daysInMonth; i++) {
+            var isToday = (i === d);
+            html += '<div class="cal-cell' + (isToday ? ' today' : '') + '">' + i + '</div>';
+        }
+        html += '</div>';
+
+        pop.innerHTML = html;
+        console.log(html);
+    </script>
+</body>
+</html>
