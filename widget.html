@@ -1613,7 +1613,7 @@
                 cities: state.cities,
                 weather: state.weather,
                 theme: state.theme,
-                window: { x: 0, y: 0 }
+                window: state.window || { x: 80, y: 80 }
             });
         }
 
@@ -1690,9 +1690,23 @@
                 state.cities = cfg.cities || DEFAULT_CITIES;
                 state.weather = cfg.weather || { city: '', lat: null, lon: null };
                 state.theme = cfg.theme || 'auto';
+                state.window = cfg.window || { x: 80, y: 80 };
             } else {
                 state.cities = DEFAULT_CITIES.slice();
+                state.window = { x: 80, y: 80 };
             }
+
+            var lastWinX = window.screenX;
+            var lastWinY = window.screenY;
+            setInterval(function () {
+                // If window moved meaningfully, save position
+                if (Math.abs(window.screenX - lastWinX) > 5 || Math.abs(window.screenY - lastWinY) > 5) {
+                    lastWinX = window.screenX;
+                    lastWinY = window.screenY;
+                    state.window = { x: lastWinX, y: lastWinY };
+                    saveConfig();
+                }
+            }, 2000);
 
             applyTheme();
 
