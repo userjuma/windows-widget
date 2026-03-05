@@ -1,2 +1,3 @@
-pywebview>=4.0
-requests
+# No third-party packages required.
+# The widget uses only Python's built-in standard library.
+# Microsoft Edge or Google Chrome must be installed (both ship with Windows 10/11).
