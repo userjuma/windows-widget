@@ -140,6 +140,120 @@
             margin-top: 2px;
         }
 
+        /* ---- HOVER FORECAST PANEL ---- */
+        .weather-hoverable {
+            position: relative;
+        }
+
+        #weather-forecast-panel {
+            position: absolute;
+            top: 68px;
+            left: 0;
+            background: #26262a;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 12px;
+            width: 320px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: all 0.25s cubic-bezier(0.1, 0.9, 0.2, 1);
+            z-index: 1000;
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            cursor: default;
+        }
+
+        .weather-hoverable:hover #weather-forecast-panel {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        body.theme-light #weather-forecast-panel {
+            background: #ffffff;
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 16px 40px rgba(0, 0, 0, 0.12);
+        }
+
+        #weather-hourly-timeline {
+            display: flex;
+            gap: 14px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+        }
+
+        body.theme-light #weather-hourly-timeline {
+            scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+        }
+
+        .forecast-hour {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            font-size: 11px;
+            flex-shrink: 0;
+        }
+
+        .forecast-hour-time {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .forecast-hour-temp {
+            font-weight: 600;
+        }
+
+        body.theme-light .forecast-hour-time {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        #weather-daily-forecast {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border-top: 1px solid rgba(255, 255, 255, 0.06);
+            padding-top: 8px;
+        }
+
+        body.theme-light #weather-daily-forecast {
+            border-top-color: rgba(0, 0, 0, 0.06);
+        }
+
+        .forecast-day {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: 13px;
+        }
+
+        .forecast-day-name {
+            width: 50px;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        body.theme-light .forecast-day-name {
+            color: rgba(0, 0, 0, 0.6);
+        }
+
+        .forecast-day-icon {
+            width: 24px;
+            height: 24px;
+        }
+
+        .forecast-day-range {
+            color: rgba(255, 255, 255, 0.8);
+            font-weight: 500;
+        }
+
+        body.theme-light .forecast-day-range {
+            color: rgba(0, 0, 0, 0.8);
+        }
+
         /* Weather search inline */
         #weather-search-wrap {
             display: none;
@@ -550,13 +664,17 @@
         </div>
 
         <!-- WEATHER -->
-        <div id="weather-section">
+        <div id="weather-section" class="weather-hoverable">
             <div id="weather-icon-wrap"><!-- injected --></div>
             <div id="weather-meta">
                 <div id="weather-temp">--</div>
                 <div id="weather-city-name" title="Click to change location">Set location</div>
                 <div id="weather-condition-text"></div>
                 <div id="weather-cached-label"></div>
+            </div>
+            <div id="weather-forecast-panel">
+                <div id="weather-hourly-timeline"></div>
+                <div id="weather-daily-forecast"></div>
             </div>
             <div id="weather-search-wrap">
                 <button id="weather-geo-btn">Detect my location</button>
@@ -909,13 +1027,62 @@
             cond.textContent = conditionText(data.code);
             icon.innerHTML = getWeatherSVG(data.code, night);
             cache.textContent = cached ? 'Last updated: ' + (data.updated || '') : '';
+
+            if (data.hourly && data.daily) {
+                renderForecast(data);
+            }
+        }
+
+        function renderForecast(data) {
+            var hourlyEl = document.getElementById('weather-hourly-timeline');
+            var dailyEl = document.getElementById('weather-daily-forecast');
+            if (!hourlyEl || !dailyEl) return;
+
+            var tz = data.timezone || 'UTC';
+            // Simple way to get local time string in YYYY-MM-DDTHH format
+            var localParts = new Intl.DateTimeFormat('sv-SE', {
+                timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hour12: false
+            }).formatToParts();
+            var vals = {};
+            localParts.forEach(function (p) { vals[p.type] = p.value; });
+            var localNowStr = vals.year + '-' + vals.month + '-' + vals.day + 'T' + vals.hour + ':00';
+
+            var hIdx = data.hourly.time.findIndex(function (t) { return t >= localNowStr; });
+            if (hIdx < 0) hIdx = 0;
+
+            var hHTML = '';
+            for (var i = 0; i < 12; i++) {
+                var idx = hIdx + i;
+                if (idx >= data.hourly.time.length) break;
+                var t = data.hourly.time[idx].split('T')[1].substr(0, 5);
+                var isNow = (i === 0);
+                var temp = Math.round(data.hourly.temperature_2m[idx]) + '\u00b0';
+                var code = data.hourly.weather_code[idx];
+                var hrNum = parseInt(t.split(':')[0], 10);
+                var night = hrNum < 6 || hrNum > 19;
+                hHTML += '<div class="forecast-hour"><div class="forecast-hour-time">' + (isNow ? 'Now' : t) + '</div><div style="width:24px;height:24px;">' + getWeatherSVG(code, night) + '</div><div class="forecast-hour-temp">' + temp + '</div></div>';
+            }
+            hourlyEl.innerHTML = hHTML;
+
+            var dHTML = '';
+            for (var i = 0; i < data.daily.time.length; i++) {
+                var dStr = new Date(data.daily.time[i] + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short' });
+                var min = Math.round(data.daily.temperature_2m_min[i]) + '\u00b0';
+                var max = Math.round(data.daily.temperature_2m_max[i]) + '\u00b0';
+                var code = data.daily.weather_code[i];
+                dHTML += '<div class="forecast-day"><div class="forecast-day-name">' + (i === 0 ? 'Today' : dStr) + '</div><div class="forecast-day-icon">' + getWeatherSVG(code, false) + '</div><div class="forecast-day-range">' + min + ' / ' + max + '</div></div>';
+            }
+            dailyEl.innerHTML = dHTML;
         }
 
         function fetchWeather() {
             if (!state.weather.lat || !state.weather.lon) return;
             var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + state.weather.lat +
                 '&longitude=' + state.weather.lon +
-                '&current=temperature_2m,weather_code&timezone=auto';
+                '&current=temperature_2m,weather_code' +
+                '&hourly=temperature_2m,weather_code' +
+                '&daily=weather_code,temperature_2m_max,temperature_2m_min' +
+                '&timezone=auto&forecast_days=3';
             fetch(url).then(function (r) { return r.json(); }).then(function (d) {
                 if (!d.current) return;
                 var cacheData = {
@@ -923,7 +1090,9 @@
                     temperature: d.current.temperature_2m,
                     code: d.current.weather_code,
                     timezone: d.timezone,
-                    updated: new Date().toLocaleTimeString()
+                    updated: new Date().toLocaleTimeString(),
+                    hourly: d.hourly,
+                    daily: d.daily
                 };
                 state.weatherData = cacheData;
                 state.weatherCached = false;
