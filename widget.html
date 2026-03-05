@@ -379,6 +379,21 @@
             gap: 3px;
             position: relative;
             -webkit-app-region: no-drag;
+            transition: transform 0.2s, opacity 0.2s, box-shadow 0.2s;
+        }
+
+        .clock-card[draggable="true"] {
+            cursor: grab;
+        }
+
+        .clock-card[draggable="true"]:active {
+            cursor: grabbing;
+        }
+
+        .clock-card.drag-over {
+            transform: scale(0.96);
+            opacity: 0.8;
+            box-shadow: 0 0 0 2px #ff9f0a inset;
         }
 
         .card-top {
@@ -1119,6 +1134,8 @@
         }
 
         // ===================== CLOCK RENDERING =====================
+        var draggedIdx = null;
+
         function renderClocks() {
             var row = document.getElementById('clocks-row');
             var addBtn = document.getElementById('add-city-btn');
@@ -1130,6 +1147,7 @@
                 var card = document.createElement('div');
                 card.className = 'clock-card';
                 card.dataset.idx = idx;
+                card.draggable = true;
                 card.innerHTML = [
                     '<div class="card-top">',
                     '  <span class="card-city">', city.name, '</span>',
@@ -1140,6 +1158,36 @@
                     '<button class="card-alarm', (city.alarm ? ' active' : ''), '" data-idx="', idx, '" title="Set Alarm">', (city.alarm ? SVG_BELL_SOLID : SVG_BELL), '</button>',
                     '<button class="card-remove" data-idx="', idx, '" title="Remove">&times;</button>'
                 ].join('');
+
+                card.addEventListener('dragstart', function (e) {
+                    draggedIdx = parseInt(this.dataset.idx, 10);
+                    setTimeout(function () { card.style.opacity = '0.4'; }, 0);
+                });
+                card.addEventListener('dragend', function (e) {
+                    this.style.opacity = '';
+                    row.querySelectorAll('.clock-card').forEach(function (c) { c.classList.remove('drag-over') });
+                });
+                card.addEventListener('dragover', function (e) {
+                    e.preventDefault();
+                });
+                card.addEventListener('dragenter', function (e) {
+                    if (parseInt(this.dataset.idx, 10) !== draggedIdx) this.classList.add('drag-over');
+                });
+                card.addEventListener('dragleave', function (e) {
+                    this.classList.remove('drag-over');
+                });
+                card.addEventListener('drop', function (e) {
+                    e.preventDefault();
+                    var toIdx = parseInt(this.dataset.idx, 10);
+                    if (draggedIdx !== null && draggedIdx !== toIdx) {
+                        var movingCity = state.cities.splice(draggedIdx, 1)[0];
+                        state.cities.splice(toIdx, 0, movingCity);
+                        saveConfig();
+                        renderClocks();
+                    }
+                    this.classList.remove('drag-over');
+                });
+
                 row.insertBefore(card, addBtn);
             });
 
