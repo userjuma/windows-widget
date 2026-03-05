@@ -1,0 +1,6 @@
+weather_cache.json
+config.json
+__pycache__/
+*.pyc
+*.pyo
+.env
