@@ -627,74 +627,6 @@
             color: rgba(255, 255, 255, 0.6);
         }
 
-        /* ---- SYS CARD ---- */
-        .sys-card {
-            background: #1b1b1e;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-            border-radius: 14px;
-            padding: 13px 15px 12px;
-            min-width: 155px;
-            flex-shrink: 0;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            -webkit-app-region: no-drag;
-        }
-
-        body.theme-light .sys-card {
-            background: rgba(0, 0, 0, 0.02);
-            border-color: rgba(0, 0, 0, 0.1);
-        }
-
-        .sys-title {
-            font-size: 13px;
-            font-weight: 600;
-            color: #32d74b;
-        }
-
-        .sys-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            font-size: 11px;
-            color: rgba(255, 255, 255, 0.6);
-        }
-
-        body.theme-light .sys-row {
-            color: rgba(0, 0, 0, 0.6);
-        }
-
-        .sys-bar-bg {
-            flex: 1;
-            height: 4px;
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 2px;
-            margin: 0 8px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        body.theme-light .sys-bar-bg {
-            background: rgba(0, 0, 0, 0.1);
-        }
-
-        .sys-bar-fill {
-            position: absolute;
-            left: 0;
-            top: 0;
-            bottom: 0;
-            background: #32d74b;
-            transition: width 0.5s;
-            width: 0%;
-        }
-
-        .sys-val {
-            font-weight: 600;
-            font-variant-numeric: tabular-nums;
-            width: 26px;
-            text-align: right;
-        }
-
         /* ---- ADD CITY PANEL ---- */
         #city-panel {
             display: none;
@@ -927,23 +859,6 @@
         <!-- CLOCKS -->
         <div id="clocks-section">
             <div id="clocks-row">
-                <div id="sys-monitor-card" class="sys-card">
-                    <div class="sys-title">System</div>
-                    <div class="sys-row">
-                        <span>CPU</span>
-                        <div class="sys-bar-bg">
-                            <div class="sys-bar-fill" id="sys-cpu-bar"></div>
-                        </div>
-                        <span class="sys-val" id="sys-cpu-val">--%</span>
-                    </div>
-                    <div class="sys-row">
-                        <span>RAM</span>
-                        <div class="sys-bar-bg">
-                            <div class="sys-bar-fill" id="sys-ram-bar"></div>
-                        </div>
-                        <span class="sys-val" id="sys-ram-val">--%</span>
-                    </div>
-                </div>
                 <!-- clock cards injected here -->
                 <button id="add-city-btn" title="Add city">+</button>
             </div>
@@ -1399,21 +1314,6 @@
             });
         }
 
-        function fetchSysInfo() {
-            apiGet('/api/sysinfo').then(function (d) {
-                if (!d) return;
-                document.getElementById('sys-cpu-val').textContent = d.cpu + '%';
-                document.getElementById('sys-cpu-bar').style.width = d.cpu + '%';
-                var cpuColor = d.cpu > 80 ? '#ff453a' : (d.cpu > 50 ? '#ff9f0a' : '#32d74b');
-                document.getElementById('sys-cpu-bar').style.background = cpuColor;
-
-                document.getElementById('sys-ram-val').textContent = d.ram + '%';
-                document.getElementById('sys-ram-bar').style.width = d.ram + '%';
-                var ramColor = d.ram > 80 ? '#ff453a' : (d.ram > 60 ? '#ff9f0a' : '#32d74b');
-                document.getElementById('sys-ram-bar').style.background = ramColor;
-            });
-        }
-
         // ===================== WEATHER =====================
         function renderWeather(data, cached) {
             var temp = document.getElementById('weather-temp');
@@ -1743,9 +1643,6 @@
 
             renderClocks();
             setInterval(tickClocks, 1000);
-
-            fetchSysInfo();
-            setInterval(fetchSysInfo, 3000);
 
             if (state.weather.lat && state.weather.lon) {
                 fetchWeather();

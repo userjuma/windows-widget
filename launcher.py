@@ -102,27 +102,6 @@ class ApiHandler(BaseHTTPRequestHandler):
             cache = load_json(CACHE_FILE, None)
             self.send_json(200, cache if cache is not None else {})
 
-        elif path == '/api/sysinfo':
-            try:
-                cpu_out = subprocess.check_output("wmic cpu get loadpercentage", shell=True, text=True)
-                cpu = int(cpu_out.strip().split('\n')[-1].strip())
-            except Exception:
-                cpu = 0
-            
-            try:
-                ram_out = subprocess.check_output("wmic OS get FreePhysicalMemory,TotalVisibleMemorySize", shell=True, text=True)
-                lines = ram_out.strip().split('\n')
-                if len(lines) >= 2:
-                    parts = lines[-1].strip().split()
-                    free = int(parts[0])
-                    total = int(parts[1])
-                    ram = int(((total - free) / total) * 100)
-                else:
-                    ram = 0
-            except Exception:
-                ram = 0
-            self.send_json(200, {"cpu": cpu, "ram": ram})
-
         elif path == '/widget':
             with open(HTML_FILE, 'rb') as f:
                 body = f.read()
