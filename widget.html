@@ -57,6 +57,74 @@
             background: #ff453a;
         }
 
+        /* ---- BATTERY ---- */
+        #battery-indicator {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.4);
+            margin-right: auto;
+            -webkit-app-region: no-drag;
+            cursor: default;
+            transition: color 0.2s;
+        }
+
+        body.theme-light #battery-indicator {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        #battery-indicator:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        body.theme-light #battery-indicator:hover {
+            color: rgba(0, 0, 0, 0.8);
+        }
+
+        .bat-icon {
+            width: 22px;
+            height: 11px;
+            border: 1px solid currentColor;
+            border-radius: 3px;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .bat-icon::after {
+            content: '';
+            position: absolute;
+            right: -3px;
+            top: 2px;
+            height: 4px;
+            width: 2px;
+            background: currentColor;
+            border-radius: 0 1px 1px 0;
+        }
+
+        #bat-fill {
+            position: absolute;
+            left: 1px;
+            top: 1px;
+            bottom: 1px;
+            background: currentColor;
+            border-radius: 1px;
+            transition: width 0.3s, background 0.3s;
+        }
+
+        #bat-charge-mark {
+            position: relative;
+            z-index: 2;
+            color: #141416;
+            display: flex;
+        }
+
+        body.theme-light #bat-charge-mark {
+            color: #fff;
+        }
+
         .ctrl-btn {
             -webkit-app-region: no-drag;
             background: none;
@@ -816,6 +884,19 @@
         <!-- TOP BAR -->
         <div id="topbar">
             <span id="online-dot" title="Online"></span>
+
+            <div id="battery-indicator" style="display:none;" title="Battery">
+                <span id="battery-pct">--%</span>
+                <div class="bat-icon">
+                    <div id="bat-fill"></div>
+                    <div id="bat-charge-mark" style="display:none;">
+                        <svg viewBox="0 0 24 24" width="8" height="8" fill="currentColor">
+                            <path d="M7 11v9l10-11h-6V0L1 11h6z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
             <button class="ctrl-btn" id="theme-btn" title="Toggle Theme (Auto/Light/Dark)">&#9681;</button>
             <button class="ctrl-btn" id="weather-edit-btn" title="Change weather location">&#9685;</button>
             <button class="ctrl-btn" id="close-btn" title="Close">&times;</button>
@@ -1609,6 +1690,38 @@
             window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
                 if (state.theme === 'auto') applyTheme();
             });
+
+            // Battery API
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(function (battery) {
+                    var ind = document.getElementById('battery-indicator');
+                    var pct = document.getElementById('battery-pct');
+                    var fill = document.getElementById('bat-fill');
+                    var chargeMark = document.getElementById('bat-charge-mark');
+                    var onlineDot = document.getElementById('online-dot');
+
+                    onlineDot.style.marginRight = '8px';
+                    ind.style.display = 'flex';
+
+                    function updateBattery() {
+                        var level = Math.round(battery.level * 100);
+                        pct.textContent = level + '%';
+                        fill.style.width = 'calc(' + level + '% - 2px)';
+
+                        if (battery.charging) {
+                            chargeMark.style.display = 'flex';
+                            fill.style.background = '#32d74b';
+                        } else {
+                            chargeMark.style.display = 'none';
+                            if (level <= 20) fill.style.background = '#ff453a';
+                            else fill.style.background = '';
+                        }
+                    }
+                    updateBattery();
+                    battery.addEventListener('chargingchange', updateBattery);
+                    battery.addEventListener('levelchange', updateBattery);
+                });
+            }
 
             var cfg = await apiGet('/api/config');
             if (cfg) {
