@@ -434,6 +434,107 @@
             font-size: 10px;
             color: rgba(255, 255, 255, 0.3);
         }
+
+        /* ---- LIGHT THEME OVERRIDES ---- */
+        body.theme-light {
+            background: #f2f2f7;
+            color: #1c1c1e;
+        }
+
+        body.theme-light .clock-card,
+        body.theme-light #city-panel {
+            background: #ffffff;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+        }
+
+        body.theme-light .dropdown {
+            background: #ffffff;
+            border-color: rgba(0, 0, 0, 0.1);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        }
+
+        body.theme-light .dropdown-item {
+            border-bottom-color: rgba(0, 0, 0, 0.05);
+        }
+
+        body.theme-light .dropdown-item:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        body.theme-light .dropdown-item .sub {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        body.theme-light #weather-city-name {
+            color: rgba(0, 0, 0, 0.6);
+        }
+
+        body.theme-light #weather-city-name:hover {
+            color: #000;
+        }
+
+        body.theme-light #weather-condition-text,
+        body.theme-light .card-date {
+            color: rgba(0, 0, 0, 0.5);
+        }
+
+        body.theme-light #weather-cached-label {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        body.theme-light .ctrl-btn {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        body.theme-light .ctrl-btn:hover {
+            background: rgba(0, 0, 0, 0.08);
+            color: #000;
+        }
+
+        body.theme-light #close-btn:hover {
+            background: rgba(255, 60, 60, 0.15);
+            color: #ff453a;
+        }
+
+        body.theme-light #weather-input,
+        body.theme-light #city-search-input {
+            background: rgba(0, 0, 0, 0.03);
+            border-color: rgba(0, 0, 0, 0.1);
+            color: #000;
+        }
+
+        body.theme-light #weather-input::placeholder,
+        body.theme-light #city-search-input::placeholder {
+            color: rgba(0, 0, 0, 0.4);
+        }
+
+        body.theme-light #weather-input:focus,
+        body.theme-light #city-search-input:focus {
+            border-color: rgba(255, 159, 10, 0.5);
+        }
+
+        body.theme-light .card-remove {
+            color: rgba(0, 0, 0, 0.3);
+        }
+
+        body.theme-light #add-city-btn {
+            background: rgba(0, 0, 0, 0.02);
+            border-color: rgba(0, 0, 0, 0.1);
+            color: rgba(0, 0, 0, 0.3);
+        }
+
+        body.theme-light #add-city-btn:hover {
+            background: rgba(0, 0, 0, 0.05);
+            color: rgba(0, 0, 0, 0.6);
+        }
+
+        body.theme-light .city-result:hover {
+            background: rgba(0, 0, 0, 0.05);
+        }
+
+        body.theme-light .city-result-country {
+            color: rgba(0, 0, 0, 0.4);
+        }
     </style>
 </head>
 
@@ -443,6 +544,7 @@
         <!-- TOP BAR -->
         <div id="topbar">
             <span id="online-dot" title="Online"></span>
+            <button class="ctrl-btn" id="theme-btn" title="Toggle Theme (Auto/Light/Dark)">&#9681;</button>
             <button class="ctrl-btn" id="weather-edit-btn" title="Change weather location">&#9685;</button>
             <button class="ctrl-btn" id="close-btn" title="Close">&times;</button>
         </div>
@@ -664,6 +766,7 @@
         var state = {
             cities: [],
             weather: { city: "", lat: null, lon: null },
+            theme: "auto",
             weatherData: null,
             weatherCached: false,
             cityPanelOpen: false,
@@ -968,8 +1071,24 @@
             apiPost('/api/config', {
                 cities: state.cities,
                 weather: state.weather,
+                theme: state.theme,
                 window: { x: 0, y: 0 }
             });
+        }
+
+        // ===================== THEME =====================
+        function applyTheme() {
+            var t = state.theme;
+            if (t === 'auto') {
+                t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+            if (t === 'light') document.body.classList.add('theme-light');
+            else document.body.classList.remove('theme-light');
+
+            var btn = document.getElementById('theme-btn');
+            if (state.theme === 'auto') btn.innerHTML = '&#9681;'; // half circle
+            else if (state.theme === 'light') btn.innerHTML = '&#9788;'; // sun
+            else btn.innerHTML = '&#9789;'; // moon
         }
 
         // ===================== ONLINE STATUS =====================
@@ -989,14 +1108,20 @@
             updateOnlineStatus();
             window.addEventListener('online', function () { updateOnlineStatus(); fetchWeather(); });
             window.addEventListener('offline', updateOnlineStatus);
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function () {
+                if (state.theme === 'auto') applyTheme();
+            });
 
             var cfg = await apiGet('/api/config');
             if (cfg) {
                 state.cities = cfg.cities || DEFAULT_CITIES;
                 state.weather = cfg.weather || { city: '', lat: null, lon: null };
+                state.theme = cfg.theme || 'auto';
             } else {
                 state.cities = DEFAULT_CITIES.slice();
             }
+
+            applyTheme();
 
             var cache = await apiGet('/api/weather-cache');
             if (cache && cache.city) {
@@ -1017,6 +1142,14 @@
             setInterval(fetchWeather, 10 * 60 * 1000);
 
             // Controls
+            document.getElementById('theme-btn').addEventListener('click', function () {
+                if (state.theme === 'auto') state.theme = 'light';
+                else if (state.theme === 'light') state.theme = 'dark';
+                else state.theme = 'auto';
+                applyTheme();
+                saveConfig();
+            });
+
             document.getElementById('close-btn').addEventListener('click', function () {
                 apiPost('/api/quit', {}).finally(function () { window.close(); });
             });
