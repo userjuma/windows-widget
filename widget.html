@@ -407,6 +407,17 @@
         .card-date {
             font-size: 11px;
             color: rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            width: fit-content;
+            transition: color 0.15s;
+        }
+
+        .card-date:hover {
+            color: rgba(255, 255, 255, 0.8);
+        }
+
+        body.theme-light .card-date:hover {
+            color: #000;
         }
 
         .card-time {
@@ -761,6 +772,9 @@
             </div>
         </div>
 
+        <!-- CALENDAR POPOVER -->
+        <div id="calendar-popover" style="display:none;"></div>
+
     </div>
 
     <script>
@@ -1066,6 +1080,15 @@
                 });
             });
 
+            row.querySelectorAll('.card-date').forEach(function (el) {
+                el.addEventListener('click', function (e) {
+                    e.stopPropagation();
+                    var card = this.closest('.clock-card');
+                    var idx = parseInt(card.dataset.idx, 10);
+                    showCalendarPopover(this, state.cities[idx].timezone);
+                });
+            });
+
             row.querySelectorAll('.card-remove').forEach(function (btn) {
                 btn.addEventListener('click', function (e) {
                     e.stopPropagation();
@@ -1075,6 +1098,44 @@
                     renderClocks();
                 });
             });
+        }
+
+        function showCalendarPopover(anchorEl, tz) {
+            var pop = document.getElementById('calendar-popover');
+
+            var parts = new Intl.DateTimeFormat('en-US', {
+                timeZone: tz, year: 'numeric', month: 'numeric', day: 'numeric'
+            }).formatToParts();
+            var m = parseInt(parts.find(function (p) { return p.type === 'month' }).value, 10);
+            var d = parseInt(parts.find(function (p) { return p.type === 'day' }).value, 10);
+            var y = parseInt(parts.find(function (p) { return p.type === 'year' }).value, 10);
+
+            var firstDay = new Date(y, m - 1, 1).getDay();
+            var daysInMonth = new Date(y, m, 0).getDate();
+            var mName = new Intl.DateTimeFormat('en-US', { month: 'long' }).format(new Date(y, m - 1, 15));
+
+            var html = '<div class="cal-header"><span>' + mName + ' ' + y + '</span></div><div class="cal-grid">';
+            var dayNames = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+            dayNames.forEach(function (n) { html += '<div class="cal-day-name">' + n + '</div>'; });
+
+            for (var i = 0; i < firstDay; i++) {
+                html += '<div class="cal-cell empty"></div>';
+            }
+            for (var i = 1; i <= daysInMonth; i++) {
+                var isToday = (i === d);
+                html += '<div class="cal-cell' + (isToday ? ' today' : '') + '">' + i + '</div>';
+            }
+            html += '</div>';
+
+            pop.innerHTML = html;
+            pop.style.display = 'block';
+
+            var rect = anchorEl.getBoundingClientRect();
+            var top = rect.bottom + 5;
+            var left = rect.left - 10;
+            if (left + 220 > window.innerWidth) left = window.innerWidth - 220;
+            pop.style.top = top + 'px';
+            pop.style.left = left + 'px';
         }
 
         var audioCtx = null;
@@ -1481,6 +1542,10 @@
                 var dd = document.getElementById('weather-dropdown');
                 if (!dd.contains(e.target) && e.target !== weatherInput) {
                     dd.style.display = 'none';
+                }
+                var cal = document.getElementById('calendar-popover');
+                if (!cal.contains(e.target) && !e.target.closest('.card-date')) {
+                    cal.style.display = 'none';
                 }
             });
         }
