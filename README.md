@@ -7,7 +7,7 @@ It sits on your desktop, shows you the current weather for your location, and le
 
 ## What it does
 
-- Shows live weather for your city, auto-detected on first launch
+- Shows live weather for your city, state which is  auto-detected on first launch
 - Lets you search for any city to use as your weather location
 - Displays clocks for multiple world cities, all updating in real time
 - Works offline without issue, weather falls back to the last cached data
